@@ -3,6 +3,8 @@
         "CLIENTVAR",
         "nextjs",
         "superjson",
+        "tailwindcss",
+        "tanstack",
         "TRPC",
         "typesafety"
     ]
