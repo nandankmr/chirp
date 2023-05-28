@@ -8,12 +8,14 @@ dayjs.extend(RelativeTime);
 
 import { type RouterOutputs, api } from "~/utils/api";
 import Image from "next/image";
+import { LoadingPage } from "../components/loading";
 
 const CreatePostWizard = () => {
   const { user } = useUser();
-  console.log(user);
 
-  if (!user) return null;
+  if (!user) {
+    return null;
+  }
 
   return (
     <div className="flex flex-1 items-center gap-2">
@@ -54,17 +56,34 @@ const PostView = ({ post, author }: PostWithUser) => {
   );
 };
 
-const Home: NextPage = () => {
-  const { data, isLoading } = api.posts.getAll.useQuery();
-  console.log(data);
+const Feed = () => {
+  const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
 
-  const user = useUser();
-  if (isLoading) {
-    return <div>Loading...</div>;
+  if (postsLoading) {
+    return <LoadingPage />;
   }
 
   if (!data) {
     return <div>No data</div>;
+  }
+
+  return (
+    <div className="flex flex-col">
+      {[...data, ...data]?.map((postDetails) => (
+        <PostView {...postDetails} key={postDetails.post.id} />
+      ))}
+    </div>
+  );
+};
+
+const Home: NextPage = () => {
+  const { isSignedIn, isLoaded } = useUser();
+
+  // Start loading posts as soon as the user is loaded
+  api.posts.getAll.useQuery();
+
+  if (!isLoaded) {
+    return <LoadingPage />;
   }
 
   return (
@@ -79,14 +98,10 @@ const Home: NextPage = () => {
         <div className="w-full border-x border-slate-400 md:max-w-2xl">
           <div className="flex w-full border-b border-slate-400 p-4">
             {" "}
-            {!user.isSignedIn && <SignInButton />}
-            {user.isSignedIn && <CreatePostWizard />}
+            {!isSignedIn && <SignInButton />}
+            {isSignedIn && <CreatePostWizard />}
           </div>
-          <div className="flex flex-col">
-            {[...data, ...data]?.map((postDetails) => (
-              <PostView {...postDetails} key={postDetails.post.id} />
-            ))}
-          </div>
+          <Feed />
         </div>
       </main>
     </>
