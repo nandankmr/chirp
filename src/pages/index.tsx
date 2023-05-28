@@ -1,21 +1,30 @@
 import { SignInButton, useUser } from "@clerk/nextjs";
 import { type NextPage } from "next";
 import Head from "next/head";
-import dayjs from "dayjs";
 import RelativeTime from "dayjs/plugin/relativeTime";
-
-dayjs.extend(RelativeTime);
-
 import { type RouterOutputs, api } from "~/utils/api";
 import Image from "next/image";
 import { LoadingPage } from "../components/loading";
+import dayjs from "dayjs";
+import { useState } from "react";
+
+dayjs.extend(RelativeTime);
 
 const CreatePostWizard = () => {
   const { user } = useUser();
 
-  if (!user) {
-    return null;
-  }
+  const [input, setInput] = useState("");
+
+  if (!user) return null;
+
+  const ctx = api.useContext();
+
+  const { mutate, isLoading: isPosting } = api.posts.create.useMutation({
+    onSuccess: () => {
+      setInput("");
+      void ctx.posts.getAll.invalidate();
+    },
+  });
 
   return (
     <div className="flex flex-1 items-center gap-2">
@@ -29,7 +38,13 @@ const CreatePostWizard = () => {
       <input
         placeholder="Type some emojis!"
         className="flex-grow bg-transparent outline-none"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        disabled={isPosting}
       />
+      <button className="" onClick={() => mutate({ content: input })}>
+        Post
+      </button>
     </div>
   );
 };
@@ -46,9 +61,12 @@ const PostView = ({ post, author }: PostWithUser) => {
         src={author.profileImageUrl}
       />
       <div className="flex flex-1 flex-col">
-        <div className="flex gap-1 text-slate-500">
-          <div>{`@${author.username}`}</div>·
-          <div>{dayjs(post.CreatedAt).fromNow()}</div>
+        <div className="flex gap-1">
+          <div className="text-slate-300">{`@${author.username}`}</div>
+          <div className="text-slate-500"> · </div>
+          <div className="text-slate-500">
+            {dayjs(post.CreatedAt).fromNow()}
+          </div>
         </div>
         <div className="flex">{post.content}</div>
       </div>
@@ -59,17 +77,13 @@ const PostView = ({ post, author }: PostWithUser) => {
 const Feed = () => {
   const { data, isLoading: postsLoading } = api.posts.getAll.useQuery();
 
-  if (postsLoading) {
-    return <LoadingPage />;
-  }
+  if (postsLoading) return <LoadingPage />;
 
-  if (!data) {
-    return <div>No data</div>;
-  }
+  if (!data) return <div>No data</div>;
 
   return (
     <div className="flex flex-col">
-      {[...data, ...data]?.map((postDetails) => (
+      {data.map((postDetails) => (
         <PostView {...postDetails} key={postDetails.post.id} />
       ))}
     </div>
