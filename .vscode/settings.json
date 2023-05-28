@@ -2,10 +2,13 @@
     "cSpell.words": [
         "CLIENTVAR",
         "nextjs",
+        "ratelimit",
+        "ratelimiter",
         "superjson",
         "tailwindcss",
         "tanstack",
         "TRPC",
-        "typesafety"
+        "typesafety",
+        "upstash"
     ]
 }

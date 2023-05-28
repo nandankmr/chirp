@@ -4,8 +4,9 @@ import Head from "next/head";
 import RelativeTime from "dayjs/plugin/relativeTime";
 import { type RouterOutputs, api } from "~/utils/api";
 import Image from "next/image";
-import { LoadingPage } from "../components/loading";
+import { LoadingPage, LoadingSpinner } from "../components/loading";
 import dayjs from "dayjs";
+import { toast } from "react-hot-toast";
 import { useState } from "react";
 
 dayjs.extend(RelativeTime);
@@ -24,6 +25,14 @@ const CreatePostWizard = () => {
       setInput("");
       void ctx.posts.getAll.invalidate();
     },
+    onError: (err) => {
+      const zodErrorMessage = err.data?.zodError?.fieldErrors.content;
+      if (zodErrorMessage?.[0]) {
+        toast.error(zodErrorMessage[0]);
+      } else {
+        toast.error("Failed to create post");
+      }
+    },
   });
 
   return (
@@ -41,10 +50,23 @@ const CreatePostWizard = () => {
         value={input}
         onChange={(e) => setInput(e.target.value)}
         disabled={isPosting}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey && input !== "") {
+            e.preventDefault();
+            mutate({ content: input });
+          }
+        }}
       />
-      <button className="" onClick={() => mutate({ content: input })}>
-        Post
-      </button>
+      {input !== "" && !isPosting && (
+        <button
+          className=""
+          disabled={isPosting}
+          onClick={() => mutate({ content: input })}
+        >
+          Post
+        </button>
+      )}
+      {isPosting && <LoadingSpinner />}
     </div>
   );
 };
